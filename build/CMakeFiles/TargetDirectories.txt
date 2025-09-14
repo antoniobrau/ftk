@@ -1,0 +1,3 @@
+/home/abrau/code/ftk/build/CMakeFiles/MyExecutable.dir
+/home/abrau/code/ftk/build/CMakeFiles/edit_cache.dir
+/home/abrau/code/ftk/build/CMakeFiles/rebuild_cache.dir

@@ -141,6 +141,7 @@ class FTK{
                         }
                         circular_topc_task.pop_front();
                     }
+
                     auto begin = circular_topc_task.rbegin();
                     if (begin != circular_topc_task.rend()){
                         begin = std::next(begin);
@@ -162,13 +163,12 @@ class FTK{
                             it->shrink_to_fit();
                         }
                     }
-
-                    // Rimuovi i vector vuoti dalla deque
-                    circular_topc_task.erase(
-                        std::remove_if(circular_topc_task.begin() + 1, circular_topc_task.end(),
-                                    [](const FastVector<std::pair<MultiLevel, int>>& v) { return v.empty(); }),
-                        circular_topc_task.end());
-
+                    
+                    // for (const auto& v : circular_topc_task) {
+                    //     std::cout << v.size() << " ";
+                    // }
+                    // std::cout << std::endl;
+                    
                     
                     task_mancanti.fetch_sub(1, std::memory_order_relaxed);
                     if (task_mancanti.load() == 0) {
@@ -217,8 +217,6 @@ inline void saveOccorrenzeToCSV(FTK &ftk, const std::string& filename, float ite
     file.imbue(std::locale::classic());
 
     file<<"# Total_Iterations; POOL_SIZE; DIM_MULTI_LEVEL\n";
-    int time = ftk.time;
-    if (time > ftk.DimensioneFinestra) time = ftk.DimensioneFinestra;
     file<<"#"<<iterations<<";"<<POOL_SIZE<<";"<<DIM_MULTI_LEVEL<<";\n";
 
     file<<"Pattern;";

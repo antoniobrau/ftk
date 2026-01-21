@@ -19,126 +19,146 @@
 #include"ThreadPool.hpp"
 
 
-// void  save_sliding_window_occorrences(const std::string& filename, const Patterns_Map<std::array<std::pair<int,int>, N_POINTS_SLIDING_WINDOW>>& clusters, const std::array<float,N_POINTS_SLIDING_WINDOW>& total_iterations) {
-//     // Scrittura del file in UTF-8
-//     std::ofstream file(filename);
-//     file.imbue(std::locale::classic());
+void  save_sliding_window_occorrences(const std::string& filename, const Patterns_Map<std::array<std::pair<int,int>, N_POINTS_SLIDING_WINDOW>>& clusters, const std::array<float,N_POINTS_SLIDING_WINDOW>& total_iterations) {
+    // Scrittura del file in UTF-8
+    std::ofstream file(filename);
+    file.imbue(std::locale::classic());
 
-//     file << "# Total_Iterations\n";
-//     file << "#";
-//     for(int i = 0; i < N_POINTS_SLIDING_WINDOW; ++i) {
-//         file << total_iterations[i] << ";";
-//     }
-//     file << "\n";
+    file << "# Total_Iterations\n";
+    file << "#";
+    for(int i = 0; i < N_POINTS_SLIDING_WINDOW; ++i) {
+        file << total_iterations[i] << ";";
+    }
+    file << "\n";
 
-//     file << "Pattern;";
-//     for (int i = 0; i < N_POINTS_SLIDING_WINDOW; ++i) {
-//         file << "Sum_level_" << i << ";";
-//         file << "Count_level_" << i << ";";
-//     }
-//     file << "\n";
-//     for (const auto& pair : clusters) {
-//         file << pair.first << ";";
-//         for (int i = 0; i < N_POINTS_SLIDING_WINDOW; ++i) {
-//             file << pair.second[i].first << ";";
-//             file << pair.second[i].second << ";";
-//         }
-//         file << "\n";
-//     }
-//     file.close();
+    file << "Pattern;";
+    for (int i = 0; i < N_POINTS_SLIDING_WINDOW; ++i) {
+        file << "Sum_level_" << i << ";";
+        file << "Count_level_" << i << ";";
+    }
+    file << "\n";
+    for (const auto& pair : clusters) {
+        file << pair.first << ";";
+        for (int i = 0; i < N_POINTS_SLIDING_WINDOW; ++i) {
+            file << pair.second[i].first << ";";
+            file << pair.second[i].second << ";";
+        }
+        file << "\n";
+    }
+    file.close();
 
-// }
-// void sliding_window(const std::string& filename, int window_size) {
-//     //Prendiamo un insieme di 100 punti
-//     Patterns_Map<std::array<std::pair<int,int>, N_POINTS_SLIDING_WINDOW>> clusters;
-//     DataHandler dataHandler(filename, 100, 16);
-//     ThreadPool pool(POOL_SIZE);
-//     FTK ftk(window_size, dataHandler, pool, 0.999, 5000);
-//     std::array<float,N_POINTS_SLIDING_WINDOW> total_iterations = {0};
+}
+void sliding_window(const std::string& filename, int window_size) {
+    //Prendiamo un insieme di 100 punti
+    Patterns_Map<std::array<std::pair<int,int>, N_POINTS_SLIDING_WINDOW>> clusters;
+    DataHandler dataHandler(filename, 100, 1);
+    ThreadPool pool(POOL_SIZE);
+    FTK ftk(window_size, dataHandler, pool, 0.75, 1000);
+    std::array<float,N_POINTS_SLIDING_WINDOW> total_iterations = {0};
 
-//     size_t current_point = 0;
-//     while (ftk.time_update()) {
-//         if (ftk.time == 16000) {
-//             break;
-//         }
+    size_t current_point = 0;
+    while (ftk.time_update()) {
+        // if (ftk.time == 16000) {
+        //     break;
+        // }
 
-//         if (ftk.time % 80 == 0 && ftk.time > 0) {
-//             total_iterations[current_point] = ftk.get_total_iterations();
-//             auto topc = ftk.get_topc();
-//             for (auto it = topc.begin(); it != topc.end(); it++){
-//                 auto &cluster = it->first;
-//                 auto &pair = it->second;
-//                 if (clusters.find(cluster) == clusters.end()){
-//                     clusters.emplace(cluster, std::array<std::pair<int,int>, N_POINTS_SLIDING_WINDOW>{});
-//                     clusters[cluster][current_point] = std::make_pair(pair.first, pair.second);
-//                 }
-//                 else {
-//                     auto &array = clusters[cluster];
-//                     array[current_point] = std::make_pair(pair.first, pair.second);
-//                 }
-//             }
-//             current_point++;
-//             if (current_point == N_POINTS_SLIDING_WINDOW) {
-//                 break;
-//             }
-//         }
-//         std::cout << "Time step: " << ftk.time <<"    Current iterations: "<<ftk.current_iterations<< std::endl;
-//     }
+        if (ftk.time % 40 == 0 && ftk.time > 0) {
+            total_iterations[current_point] = ftk.get_total_iterations();
+            auto topc = ftk.get_topc();
+            for (auto it = topc.begin(); it != topc.end(); it++){
+                auto &cluster = it->first;
+                auto &pair = it->second;
+                if (clusters.find(cluster) == clusters.end()){
+                    clusters.emplace(cluster, std::array<std::pair<int,int>, N_POINTS_SLIDING_WINDOW>{});
+                    clusters[cluster][current_point] = std::make_pair(pair.first, pair.second);
+                }
+                else {
+                    auto &array = clusters[cluster];
+                    array[current_point] = std::make_pair(pair.first, pair.second);
+                }
+            }
+            current_point++;
+            if (current_point == N_POINTS_SLIDING_WINDOW) {
+                break;
+            }
+        }
+        std::cout << "Time step: " << ftk.time <<"    Current iterations: "<<ftk.current_iterations<< std::endl;
+    }
 
-//     save_sliding_window_occorrences("/home/abrau/code/sliding_window.txt", clusters, total_iterations);
-//     std::cout << "Sliding window saved." << std::endl;
-// }
+    save_sliding_window_occorrences("/home/abrau/code/sliding_window.txt", clusters, total_iterations);
+    std::cout << "Sliding window saved." << std::endl;
+}
 
 
 
-// void tracks_simulation(const std::string& filename) {
-//     std::unordered_set<Cluster> black_list;
-//     std::string data = "58,221,173;8,251,72 ;0,157,411;58,241,180;42,94,359 ;58,243,79 ;43,149,730;50,244,54 ;43,17,22  ;50,54,288 ;56,156,722;48,13,12  ;48,180,723;58,217,127;50,188,168;42,206,27 ;42,72,68  ;42,149,175;56,87,349 ;42,249,7  ;50,87,165 ;41,168,294;40,253,686;56,35,473 ;42,220,106;41,103,504;56,108,681;56,198,734;42,211,140;56,172,630;40,187,491;42,88,202 ;50,217,36 ;56,240,633;42,105,98 ;42,170,387;42,78,203 ;58,77,469 ;40,224,567;56,244,480;";
+void tracks_simulation(const std::string& filename) {
+    std::unordered_set<Cluster> black_list;
+    // std::string data = "58,221,173;8,251,72 ;50,157,411;58,241,180;42,94,359 ;58,243,79 ;43,149,730;50,244,54 ;43,17,22  ;50,54,288 ;56,156,722;48,13,12  ;48,180,723;58,217,127;50,188,168;42,206,27 ;42,72,68  ;42,149,175;56,87,349 ;42,249,7  ;50,87,165 ;41,168,294;40,253,686;56,35,473 ;42,220,106;41,103,504;56,108,681;56,198,734;42,211,140;56,172,630;40,187,491;42,88,202 ;50,217,36 ;56,240,633;42,105,98 ;42,170,387;42,78,203 ;58,77,469 ;40,224,567;56,244,480;";
+    std::string data = "";
+    std::stringstream ss(data);
+    std::string triple_str;
 
-//     std::stringstream ss(data);
-//     std::string triple_str;
+    while (std::getline(ss, triple_str, ';')) {
+        // Rimuovi spazi iniziali/finali
+        triple_str.erase(0, triple_str.find_first_not_of(" \t"));
+        triple_str.erase(triple_str.find_last_not_of(" \t") + 1);
 
-//     while (std::getline(ss, triple_str, ';')) {
-//         // Rimuovi spazi iniziali/finali
-//         triple_str.erase(0, triple_str.find_first_not_of(" \t"));
-//         triple_str.erase(triple_str.find_last_not_of(" \t") + 1);
+        if (!triple_str.empty()) {
+            std::stringstream triple_ss(triple_str);
+            std::string num_str;
+            std::vector<int> nums;
 
-//         if (!triple_str.empty()) {
-//             std::stringstream triple_ss(triple_str);
-//             std::string num_str;
-//             std::vector<int> nums;
+            while (std::getline(triple_ss, num_str, ',')) {
+                // Rimuovi spazi e converti in intero
+                num_str.erase(0, num_str.find_first_not_of(" \t"));
+                num_str.erase(num_str.find_last_not_of(" \t") + 1);
+                nums.push_back(std::stoi(num_str));
+            }
 
-//             while (std::getline(triple_ss, num_str, ',')) {
-//                 // Rimuovi spazi e converti in intero
-//                 num_str.erase(0, num_str.find_first_not_of(" \t"));
-//                 num_str.erase(num_str.find_last_not_of(" \t") + 1);
-//                 nums.push_back(std::stoi(num_str));
-//             }
+            // Controllo che ci siano esattamente 3 numeri
+            if (nums.size() == 3) {
+                Cluster clu(nums[2], nums[0], nums[1]);
+                // black_list.emplace(clu);
+            } else {
+                std::cerr << "⚠️  Tripletta malformata: '" << triple_str << "'\n";
+            }
+        }
+    }
 
-//             // Controllo che ci siano esattamente 3 numeri
-//             if (nums.size() == 3) {
-//                 Cluster clu(nums[2], nums[0], nums[1]);
-//                 black_list.emplace(clu);
-//             } else {
-//                 std::cerr << "⚠️  Tripletta malformata: '" << triple_str << "'\n";
-//             }
-//         }
-//     }
+    // DataHandler dataHandler(filename, 10000, black_list, 1,64, 80);
+    DataHandler dataHandler(filename, 100, 1);
 
-//     DataHandler dataHandler(filename, 10000, black_list, 1, 16);
-//     ThreadPool pool(POOL_SIZE);
-//     // FTK ftk(100000000, dataHandler, pool, 0.999, 5000);
-//     FTK ftk(200000, dataHandler, pool, 0.999, 50000);
+    ThreadPool pool(POOL_SIZE);
+    // FTK ftk(100000000, dataHandler, pool, 0.999, 5000);
+    FTK ftk(20000000, dataHandler, pool, 0.75, 100000);
 
-//     while (ftk.time_update()) {
-//         // if (ftk.time == 10) {
-//         //     break;
-//         // }
-//         std::cout << "Time step: " << ftk.time <<"    Current iterations: "<<ftk.current_iterations<< "    Total Iterations : " <<ftk.get_total_iterations()<<std::endl;
-//     }
+    long long n = 0;
+    double sum = 0.0;
+    double sum2 = 0.0;
 
-//     saveOccorrenzeToCSV(ftk, "/home/abrau/code/full_tracks.txt", ftk.get_total_iterations());
-// }
+    while (ftk.time_update()) {
+        // if (ftk.time == 10) {
+        //     break;
+        // }
+        double x = ftk.current_iterations;
+        n++;
+        sum  += x;
+        sum2 += x * x;
+        std::cout << "Time step: " << ftk.time <<"    Current iterations: "<<ftk.current_iterations<< "    Total Iterations : " <<ftk.get_total_iterations()<<std::endl;
+    }
+
+    double mean = sum / n;
+    double variance = (sum2 / n) - (mean * mean);
+    double stddev = std::sqrt(variance);
+
+    std::cout << "cycles :"<< n<<"\n";
+    std::cout << "mean: " << mean << "\n";
+    std::cout << "stddev: " << stddev << "\n";
+
+    saveOccorrenzeToCSV(ftk, "/home/abrau/code/full_tracks.txt", ftk.get_total_iterations());
+}
+
+
 
 
 
@@ -355,89 +375,89 @@ void save_occorrenze_tracce(const std::string& filename,
     }
 }
 
-
-int main() {
-    std::unordered_set<Cluster> black_list;
-    std::string data = "58,221,173;8,251,72 ;0,157,411;58,241,180;42,94,359 ;58,243,79 ;43,149,730;50,244,54 ;43,17,22  ;50,54,288 ;56,156,722;48,13,12  ;48,180,723;58,217,127;50,188,168;42,206,27 ;42,72,68  ;42,149,175;56,87,349 ;42,249,7  ;50,87,165 ;41,168,294;40,253,686;56,35,473 ;42,220,106;41,103,504;56,108,681;56,198,734;42,211,140;56,172,630;40,187,491;42,88,202 ;50,217,36 ;56,240,633;42,105,98 ;42,170,387;42,78,203 ;58,77,469 ;40,224,567;56,244,480;";
-
-    std::stringstream ss(data);
-    std::string triple_str;
-
-    while (std::getline(ss, triple_str, ';')) {
-        // Rimuovi spazi iniziali/finali
-        triple_str.erase(0, triple_str.find_first_not_of(" \t"));
-        triple_str.erase(triple_str.find_last_not_of(" \t") + 1);
-
-        if (!triple_str.empty()) {
-            std::stringstream triple_ss(triple_str);
-            std::string num_str;
-            std::vector<int> nums;
-
-            while (std::getline(triple_ss, num_str, ',')) {
-                // Rimuovi spazi e converti in intero
-                num_str.erase(0, num_str.find_first_not_of(" \t"));
-                num_str.erase(num_str.find_last_not_of(" \t") + 1);
-                nums.push_back(std::stoi(num_str));
-            }
-
-            // Controllo che ci siano esattamente 3 numeri
-            if (nums.size() == 3) {
-                Cluster clu(nums[2], nums[0], nums[1]);
-                black_list.emplace(clu);
-            } else {
-                std::cerr << "⚠️  Tripletta malformata: '" << triple_str << "'\n";
-            }
-        }
-    }
-
-    // Esempio di utilizzo
-    DataHandler dataHandler("/home/abrau/code/new_clusters_output.txt", 100, black_list, 1,64);
-    // std::vector<Pattern> patterns = loadPatternsFromCSV("/home/abrau/code/patterns_tracce_64.txt");
-    std::vector<std::string> patterns = loadTracksFromCSV("/home/abrau/code/patterns_tracce_64.txt");
-    // Patterns_Map<int> pattern_map;
-    std::unordered_map<std::string, int> pattern_map;
-    float total_iterations = 0;
-    for (const auto& pattern : patterns) {
-        pattern_map[pattern] = 0; // Inizializza il conteggio a 0
-    }
-
-    int tempo = 0;
-    // for (int i = 0; i < 14840; i++) dataHandler.time_step();
-    while(true) {
-        if (  !dataHandler.time_step()) {
-
-            std::cout << "EOF reached" << std::endl;
-            break;
-        }
-        total_iterations += dataHandler.data.size();
-        // if ( tempo++ >= 1000) break;
-        for (const auto& pattern : dataHandler.data) {
-            std::array<int,9> p = {
-                pattern.sensor, pattern.row0, pattern.col0,
-                pattern.sensor, pattern.row1, pattern.col1,
-                pattern.sensor, pattern.row2, pattern.col2
-            };
-
-            std::ostringstream oss;
-                oss << p[0] << "/"
-                    << p[4] << "," << p[5] << "/"
-                    << p[1] << "," << p[2] << "/"
-                    << p[7] << "," << p[8];
-    
-            // Controlla se il cluster è presente nel pattern_map
-            auto it = pattern_map.find(oss.str());
-            if (it != pattern_map.end()) {
-                it->second++; // Incrementa il conteggio
-            }
-        }
-        std::cout << "Time step: " << tempo << "    Current iterations: " << dataHandler.data.size() << std::endl;
-    }
-    save_occorrenze_tracce("/home/abrau/code/occorrenze.txt", pattern_map, total_iterations);
-    return 0;
-}
+// MAIN PER CONTARE LE OCCORRENZE DELLE TRACCE IDENTIFICATE PRIMA CON IL TOPK
 // int main() {
-//     // sliding_window("/home/abrau/code/clusters_output.txt", 1);
-//     tracks_simulation("/home/abrau/code/new_clusters_output.txt");
+//     std::unordered_set<Cluster> black_list;
+//     std::string data = "58,221,173;8,251,72 ;0,157,411;58,241,180;42,94,359 ;58,243,79 ;43,149,730;50,244,54 ;43,17,22  ;50,54,288 ;56,156,722;48,13,12  ;48,180,723;58,217,127;50,188,168;42,206,27 ;42,72,68  ;42,149,175;56,87,349 ;42,249,7  ;50,87,165 ;41,168,294;40,253,686;56,35,473 ;42,220,106;41,103,504;56,108,681;56,198,734;42,211,140;56,172,630;40,187,491;42,88,202 ;50,217,36 ;56,240,633;42,105,98 ;42,170,387;42,78,203 ;58,77,469 ;40,224,567;56,244,480;";
 
+//     std::stringstream ss(data);
+//     std::string triple_str;
+
+//     while (std::getline(ss, triple_str, ';')) {
+//         // Rimuovi spazi iniziali/finali
+//         triple_str.erase(0, triple_str.find_first_not_of(" \t"));
+//         triple_str.erase(triple_str.find_last_not_of(" \t") + 1);
+
+//         if (!triple_str.empty()) {
+//             std::stringstream triple_ss(triple_str);
+//             std::string num_str;
+//             std::vector<int> nums;
+
+//             while (std::getline(triple_ss, num_str, ',')) {
+//                 // Rimuovi spazi e converti in intero
+//                 num_str.erase(0, num_str.find_first_not_of(" \t"));
+//                 num_str.erase(num_str.find_last_not_of(" \t") + 1);
+//                 nums.push_back(std::stoi(num_str));
+//             }
+
+//             // Controllo che ci siano esattamente 3 numeri
+//             if (nums.size() == 3) {
+//                 Cluster clu(nums[2], nums[0], nums[1]);
+//                 black_list.emplace(clu);
+//             } else {
+//                 std::cerr << "⚠️  Tripletta malformata: '" << triple_str << "'\n";
+//             }
+//         }
+//     }
+
+//     // Esempio di utilizzo
+//     DataHandler dataHandler("/home/abrau/code/new_clusters_output.txt", 100, black_list, 1,64);
+//     // std::vector<Pattern> patterns = loadPatternsFromCSV("/home/abrau/code/patterns_tracce_64.txt");
+//     std::vector<std::string> patterns = loadTracksFromCSV("/home/abrau/code/patterns_tracce_64.txt");
+//     // Patterns_Map<int> pattern_map;
+//     std::unordered_map<std::string, int> pattern_map;
+//     float total_iterations = 0;
+//     for (const auto& pattern : patterns) {
+//         pattern_map[pattern] = 0; // Inizializza il conteggio a 0
+//     }
+
+//     int tempo = 0;
+//     // for (int i = 0; i < 14840; i++) dataHandler.time_step();
+//     while(true) {
+//         if (  !dataHandler.time_step()) {
+
+//             std::cout << "EOF reached" << std::endl;
+//             break;
+//         }
+//         total_iterations += dataHandler.data.size();
+//         // if ( tempo++ >= 1000) break;
+//         for (const auto& pattern : dataHandler.data) {
+//             std::array<int,9> p = {
+//                 pattern.sensor, pattern.row0, pattern.col0,
+//                 pattern.sensor, pattern.row1, pattern.col1,
+//                 pattern.sensor, pattern.row2, pattern.col2
+//             };
+
+//             std::ostringstream oss;
+//                 oss << p[0] << "/"
+//                     << p[4] << "," << p[5] << "/"
+//                     << p[1] << "," << p[2] << "/"
+//                     << p[7] << "," << p[8];
+    
+//             // Controlla se il cluster è presente nel pattern_map
+//             auto it = pattern_map.find(oss.str());
+//             if (it != pattern_map.end()) {
+//                 it->second++; // Incrementa il conteggio
+//             }
+//         }
+//         std::cout << "Time step: " << tempo << "    Current iterations: " << dataHandler.data.size() << std::endl;
+//     }
+//     save_occorrenze_tracce("/home/abrau/code/occorrenze.txt", pattern_map, total_iterations);
 //     return 0;
 // }
+int main() {
+    // sliding_window("/home/abrau/code/new_clusters_output.txt", 1500);
+    tracks_simulation("/home/abrau/code/new_clusters_output.txt");
+
+    return 0;
+}

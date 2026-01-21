@@ -695,16 +695,16 @@ class Spatial_Invariance_ClustersHandler{
         std::vector<Cluster> frames_1_clusters;
         std::vector<Cluster> frames_2_clusters;
 
-        std::unordered_set<Cluster> &black_
-        list;
+        std::unordered_set<Cluster> &black_list;
     
         std::vector<Spatial_Invariance_Clusters> data;
         std::ifstream file;
         size_t collapsed_pixels;
         size_t window_size = WINDOW_SIZE;
+        size_t massimo_numero_cluster;
     
-        Spatial_Invariance_ClustersHandler(const std::string& path_file_clusters, size_t n_events, std::unordered_set<Cluster> &black_list, size_t collapsed_pixels = 1, size_t window_size = WINDOW_SIZE)
-            : n_events(n_events), file(path_file_clusters), black_list(black_list), collapsed_pixels(collapsed_pixels), window_size(window_size) { 
+        Spatial_Invariance_ClustersHandler(const std::string& path_file_clusters, size_t n_events, std::unordered_set<Cluster> &black_list, size_t collapsed_pixels = 1, size_t window_size = WINDOW_SIZE, size_t massimo_numero_cluster = 80)
+            : n_events(n_events), file(path_file_clusters), black_list(black_list), collapsed_pixels(collapsed_pixels), window_size(window_size), massimo_numero_cluster(massimo_numero_cluster) { 
             if (!file.is_open()) {
                 std::cerr << "Errore nell'aprire il file: " << path_file_clusters << std::endl;
                 throw std::runtime_error("File non trovato");
@@ -761,7 +761,13 @@ class Spatial_Invariance_ClustersHandler{
                         }
                     }
                 }
-                if (frames_0_clusters.size() == 0 || frames_2_clusters.size() == 0 || frames_0_clusters.size() == 0){
+                if (frames_0_clusters.size() == 0 || 
+                    frames_2_clusters.size() == 0 || 
+                    frames_1_clusters.size() == 0 ||
+                    frames_0_clusters.size() > massimo_numero_cluster || 
+                    frames_2_clusters.size() > massimo_numero_cluster || 
+                    frames_1_clusters.size() > massimo_numero_cluster)
+                    {
                     frames_0_clusters.clear();
                     frames_1_clusters.clear();
                     frames_2_clusters.clear();
@@ -777,7 +783,7 @@ class Spatial_Invariance_ClustersHandler{
                                 int row2 = static_cast<int>(clu2.row) - static_cast<int>(clu1.row);
                                 int col2 = static_cast<int>(clu2.col) - static_cast<int>(clu1.col);
                                 if ( (clu1.sensor %4 == clu2.sensor%4) && std::abs(row2) < window_size && std::abs(col2) < window_size ){
-                                    Spatial_Invariance_Clusters clusters(row0, col0, row2, col2, static_cast<int>(clu1.row)/ 1000, static_cast<int>(clu1.col)/ 1000, clu0.sensor%4);
+                                    Spatial_Invariance_Clusters clusters(row0, col0, row2, col2, static_cast<int>(clu1.row)/ 16, static_cast<int>(clu1.col)/ 16, clu0.sensor%4);
                                     data.push_back(clusters);
                                 }
                             }
@@ -804,9 +810,10 @@ class Spatial_Invariance_ClustersHandler_predictive_track{
         std::ifstream file;
         size_t collapsed_pixels;
         size_t window_size = WINDOW_SIZE;
+        size_t massimo_numero_cluster;
     
-        Spatial_Invariance_ClustersHandler_predictive_track(const std::string& path_file_clusters, size_t n_events, std::unordered_set<Cluster> &black_list, size_t collapsed_pixels = 1, size_t window_size = WINDOW_SIZE)
-            : n_events(n_events) , file(path_file_clusters), collapsed_pixels(collapsed_pixels), window_size(window_size), black_list(black_list) { 
+        Spatial_Invariance_ClustersHandler_predictive_track(const std::string& path_file_clusters, size_t n_events, std::unordered_set<Cluster> &black_list, size_t collapsed_pixels = 1, size_t window_size = WINDOW_SIZE, size_t massimo_numero_cluster = 80)
+            : n_events(n_events) , file(path_file_clusters), collapsed_pixels(collapsed_pixels), window_size(window_size), black_list(black_list), massimo_numero_cluster(massimo_numero_cluster) { 
             if (!file.is_open()) {
                 std::cerr << "Errore nell'aprire il file: " << path_file_clusters << std::endl;
                 throw std::runtime_error("File non trovato");
@@ -863,7 +870,13 @@ class Spatial_Invariance_ClustersHandler_predictive_track{
                         }
                     }
                 }
-                if (frames_0_clusters.size() == 0 || frames_2_clusters.size() == 0 || frames_0_clusters.size() == 0){
+                if (frames_0_clusters.size() == 0 || 
+                    frames_2_clusters.size() == 0 || 
+                    frames_1_clusters.size() == 0 ||
+                    frames_0_clusters.size() > massimo_numero_cluster || 
+                    frames_2_clusters.size() > massimo_numero_cluster || 
+                    frames_1_clusters.size() > massimo_numero_cluster)
+                    {
                     frames_0_clusters.clear();
                     frames_1_clusters.clear();
                     frames_2_clusters.clear();
@@ -955,7 +968,7 @@ class ClustersHandler{
                     char comma;
                     if (cluster_ss >> sensor >> comma >> row >> comma >> col) {
                         int current_frame = int(int(sensor) / 4);
-                        if ((current_frame != frame) & (current_frame != frame +2) & (current_frame != frame +4)) continue;
+                        // if ((current_frame != frame) & (current_frame != frame +2) & (current_frame != frame +4)) continue;
                         Cluster cluster(row / collapsed_pixels, col / collapsed_pixels, sensor);
 
                         data.emplace_back(cluster);

@@ -168,6 +168,7 @@ class FTK{
                     //     std::cout << v.size() << " ";
                     // }
                     // std::cout << std::endl;
+                    std::cout<<circular_topc_task.size()<<"\n";
                     
                     
                     task_mancanti.fetch_sub(1, std::memory_order_relaxed);

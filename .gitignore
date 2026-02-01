@@ -1,0 +1,55 @@
+# File compilati
+*.o
+*.obj
+*.lo
+*.la
+*.a
+*.lib
+*.so
+*.so.*
+*.dll
+*.dylib
+
+# Eseguibili
+*.exe
+*.out
+*.app
+
+# Cartelle di build
+/build/
+/build-*/
+/cmake-build-*/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Debug e profiling
+*.log
+*.gch
+*.prof
+*.stackdump
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Visual Studio
+.vs/
+*.vcxproj*
+*.sln
+
+# macOS
+.DS_Store
+
+# Linux
+*~
+
+# Windows
+Thumbs.db

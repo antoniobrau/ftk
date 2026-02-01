@@ -9,12 +9,12 @@
 #define WINDOW_SIZE_FTK 999999999
 #define N_POINTS_SLIDING_WINDOW 130 // numero di punti da samplare nel dataset (non è un parametro topk)
 // ---- COSTANTI RELATIVE DATA AND FILES -----
-#define out_file "/home/abrau/code/data/fulltrack_48_counting.txt"
+#define out_file "@OUT_FILE@"
 #define root_post_process_file "/home/abrau/code/new_clusters_output.txt"
 
 // ---------COSTANTI RIGUARDO Spatial_Invariance_ClustersHandler ----------------------------
 #define EVENTI_PER_TIME_UNIT 1000
-#define frame  48
+#define frame  @FRAME@
 #define COLLAPSED_PIXELS 1;
 #define MASSIMO_NUMERO_CLUSTERS 80
 #define WINDOW_SIZE_MIDDLE_LAYER 64

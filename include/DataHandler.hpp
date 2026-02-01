@@ -1,6 +1,9 @@
 #ifndef FTK_DATAHANDLER_HPP
 #define FTK_DATAHANDLER_HPP
 
+#include"CostantSettings.hpp"
+#include"xxhash64.h"
+
 #include <iostream>      
 #include <fstream>
 #include <sstream>       
@@ -9,6 +12,7 @@
 #include <chrono>   
 #include <queue>
 #include <unordered_map>
+#include <unordered_set>
 #include <cstdint>
 #include <random>
 #include <algorithm>
@@ -136,56 +140,9 @@ struct Spatial_Invariance_Tracks_Hash {
 
 template <typename T>
 using Spatial_Invariance_Tracks_Map = std::unordered_map<Spatial_Invariance_Tracks, T, Spatial_Invariance_Tracks_Hash>;
-//----------------------------------------------------------------------------------------------------
-
-// class Spatial_Invariance_Clusters {
-//     public:
-//         int row0, col0, row2, col2;
-
-//         // Costruttore con parametri
-//         inline Spatial_Invariance_Clusters(int row0, int col0, int row2, int col2)
-//             : row0(row0), col0(col0), row2(row2), col2(col2) {}
-    
-//         // Costruttore di default
-//         inline Spatial_Invariance_Clusters() = default;
-    
-//         // Operatore di uguaglianza
-//         inline bool operator==(const Spatial_Invariance_Clusters& other) const {
-//             return row0 == other.row0 && col0 == other.col0 &&
-//                    row2 == other.row2 && col2 == other.col2;
-//         }
-    
-//         // Operatore di confronto per ordinamento
-//         inline bool operator<(const Spatial_Invariance_Clusters& other) const {
-//             if (row0 != other.row0) return row0 < other.row0;
-//             if (col0 != other.col0) return col0 < other.col0;
-//             if (row2 != other.row2) return row2 < other.row2;
-//             return col2 < other.col2;
-//         }
-    
-//         // Operatore di stampa
-//         friend inline std::ostream& operator<<(std::ostream& os, const Spatial_Invariance_Clusters& c) {
-//             os << c.row0 << ',' << c.col0 << '/' << c.row2 << ',' << c.col2;
-//             return os;
-//         }
-//     };
 
 
-// template <>
-// struct std::hash<Spatial_Invariance_Clusters> {
-//     std::size_t operator()(const Spatial_Invariance_Clusters& c) const {
-//         std::size_t seed = 0;
-//         hash_combine(seed, std::hash<int>{}(c.row0));
-//         hash_combine(seed, std::hash<int>{}(c.col0));
-//         hash_combine(seed, std::hash<int>{}(c.row2));
-//         hash_combine(seed, std::hash<int>{}(c.col2));
-//         return seed;
-//     }
-// };
 
-
-// template <typename T>
-// using Spatial_Invariance_Clusters_Map = std::unordered_map<Spatial_Invariance_Clusters,T>;
 class Spatial_Invariance_Clusters {
     public:
         int row0, col0, row2, col2;
@@ -309,7 +266,7 @@ namespace std {
     };
 }
 
-std::string to_string(const std::tuple<Cluster, Cluster, Cluster>& tpl) {
+inline std::string to_string(const std::tuple<Cluster, Cluster, Cluster>& tpl) {
     std::ostringstream oss;
     oss  << std::get<0>(tpl) << "," << std::get<1>(tpl) << "," << std::get<2>(tpl);
     return oss.str();
@@ -369,7 +326,6 @@ public:
             std::stringstream ss(line);
             std::string cluster_str;
 
-            int frame = 10;
             while (std::getline(ss, cluster_str, ';')) {
                 std::stringstream cluster_ss(cluster_str);
                 uint16_t row, col, sensor;
@@ -550,7 +506,6 @@ class Spatial_Invariance_TracksHandler{
                 std::stringstream ss(line);
                 std::string cluster_str;
     
-                int frame = 10;
                 while (std::getline(ss, cluster_str, ';')) {
                     std::stringstream cluster_ss(cluster_str);
                     uint16_t row, col, sensor;
@@ -690,21 +645,30 @@ class Spatial_Invariance_TracksHandler{
 //-------------------------------------------------------------------------------------------------------------------------------------
 class Spatial_Invariance_ClustersHandler{    
     public:
-        size_t n_events;
         std::vector<Cluster> frames_0_clusters;
         std::vector<Cluster> frames_1_clusters;
         std::vector<Cluster> frames_2_clusters;
 
-        std::unordered_set<Cluster> &black_list;
+        std::unordered_set<Cluster> *black_list = nullptr;
     
         std::vector<Spatial_Invariance_Clusters> data;
         std::ifstream file;
-        size_t collapsed_pixels;
-        size_t window_size = WINDOW_SIZE;
-        size_t massimo_numero_cluster;
+        size_t collapsed_pixels = COLLAPSED_PIXELS;
+        size_t window_size = WINDOW_SIZE_MIDDLE_LAYER;
+        size_t massimo_numero_cluster = MASSIMO_NUMERO_CLUSTERS;
+        size_t n_events = EVENTI_PER_TIME_UNIT;
+
+            // costruttore senza blacklist
+        Spatial_Invariance_ClustersHandler(const std::string& path_file_clusters)
+                    : file(path_file_clusters){ 
+            if (!file.is_open()) {
+                std::cerr << "Errore nell'aprire il file: " << path_file_clusters << std::endl;
+                throw std::runtime_error("File non trovato");
+            }
+        }
     
-        Spatial_Invariance_ClustersHandler(const std::string& path_file_clusters, size_t n_events, std::unordered_set<Cluster> &black_list, size_t collapsed_pixels = 1, size_t window_size = WINDOW_SIZE, size_t massimo_numero_cluster = 80)
-            : n_events(n_events), file(path_file_clusters), black_list(black_list), collapsed_pixels(collapsed_pixels), window_size(window_size), massimo_numero_cluster(massimo_numero_cluster) { 
+        Spatial_Invariance_ClustersHandler(const std::string& path_file_clusters, std::unordered_set<Cluster> &black_list)
+            : file(path_file_clusters), black_list(&black_list){ 
             if (!file.is_open()) {
                 std::cerr << "Errore nell'aprire il file: " << path_file_clusters << std::endl;
                 throw std::runtime_error("File non trovato");
@@ -735,7 +699,6 @@ class Spatial_Invariance_ClustersHandler{
                 std::stringstream ss(line);
                 std::string cluster_str;
     
-                int frame = 10;
                 while (std::getline(ss, cluster_str, ';')) {
                     std::stringstream cluster_ss(cluster_str);
                     uint16_t row, col, sensor;
@@ -748,7 +711,9 @@ class Spatial_Invariance_ClustersHandler{
                         
                         Cluster cluster(row / collapsed_pixels, col / collapsed_pixels, sensor);
 
-                        if (black_list.find(cluster) != black_list.end()) continue;
+                        if (black_list && black_list->find(cluster) != black_list->end()) {
+                            continue;
+                        }
     
                         if (current_frame == frame){
                             frames_0_clusters.push_back(cluster);
@@ -764,9 +729,9 @@ class Spatial_Invariance_ClustersHandler{
                 if (frames_0_clusters.size() == 0 || 
                     frames_2_clusters.size() == 0 || 
                     frames_1_clusters.size() == 0 ||
-                    frames_0_clusters.size() > massimo_numero_cluster || 
-                    frames_2_clusters.size() > massimo_numero_cluster || 
-                    frames_1_clusters.size() > massimo_numero_cluster)
+                    frames_0_clusters.size() > MASSIMO_NUMERO_CLUSTERS || 
+                    frames_2_clusters.size() > MASSIMO_NUMERO_CLUSTERS || 
+                    frames_1_clusters.size() > MASSIMO_NUMERO_CLUSTERS)
                     {
                     frames_0_clusters.clear();
                     frames_1_clusters.clear();
@@ -778,12 +743,12 @@ class Spatial_Invariance_ClustersHandler{
                     for(auto clu0 : frames_0_clusters){
                         int row0 = static_cast<int>(clu0.row) - static_cast<int>(clu1.row);
                         int col0 = static_cast<int>(clu0.col) - static_cast<int>(clu1.col);
-                        if ( (clu1.sensor %4 == clu0.sensor%4) && std::abs(row0) < window_size && std::abs(col0) < window_size ){
+                        if ( (clu1.sensor %4 == clu0.sensor%4) && std::abs(row0) < WINDOW_SIZE_MIDDLE_LAYER && std::abs(col0) < WINDOW_SIZE_MIDDLE_LAYER ){
                             for (auto clu2 : frames_2_clusters){
                                 int row2 = static_cast<int>(clu2.row) - static_cast<int>(clu1.row);
                                 int col2 = static_cast<int>(clu2.col) - static_cast<int>(clu1.col);
-                                if ( (clu1.sensor %4 == clu2.sensor%4) && std::abs(row2) < window_size && std::abs(col2) < window_size ){
-                                    Spatial_Invariance_Clusters clusters(row0, col0, row2, col2, static_cast<int>(clu1.row)/ 16, static_cast<int>(clu1.col)/ 16, clu0.sensor%4);
+                                if ( (clu1.sensor %4 == clu2.sensor%4) && std::abs(row2) < WINDOW_SIZE_MIDDLE_LAYER && std::abs(col2) < WINDOW_SIZE_MIDDLE_LAYER ){
+                                    Spatial_Invariance_Clusters clusters(row0, col0, row2, col2, static_cast<int>(clu1.row)/ DOWNSCALING_LAYER_CENTRALE, static_cast<int>(clu1.col)/ DOWNSCALING_LAYER_CENTRALE, clu0.sensor%4);
                                     data.push_back(clusters);
                                 }
                             }
@@ -809,10 +774,10 @@ class Spatial_Invariance_ClustersHandler_predictive_track{
         std::vector<Spatial_Invariance_Clusters> data;
         std::ifstream file;
         size_t collapsed_pixels;
-        size_t window_size = WINDOW_SIZE;
+        size_t window_size = WINDOW_SIZE_MIDDLE_LAYER;
         size_t massimo_numero_cluster;
     
-        Spatial_Invariance_ClustersHandler_predictive_track(const std::string& path_file_clusters, size_t n_events, std::unordered_set<Cluster> &black_list, size_t collapsed_pixels = 1, size_t window_size = WINDOW_SIZE, size_t massimo_numero_cluster = 80)
+        Spatial_Invariance_ClustersHandler_predictive_track(const std::string& path_file_clusters, size_t n_events, std::unordered_set<Cluster> &black_list, size_t collapsed_pixels = 1, size_t window_size = WINDOW_SIZE_MIDDLE_LAYER, size_t massimo_numero_cluster = 80)
             : n_events(n_events) , file(path_file_clusters), collapsed_pixels(collapsed_pixels), window_size(window_size), black_list(black_list), massimo_numero_cluster(massimo_numero_cluster) { 
             if (!file.is_open()) {
                 std::cerr << "Errore nell'aprire il file: " << path_file_clusters << std::endl;
@@ -844,7 +809,6 @@ class Spatial_Invariance_ClustersHandler_predictive_track{
                 std::stringstream ss(line);
                 std::string cluster_str;
     
-                int frame = 10;
                 while (std::getline(ss, cluster_str, ';')) {
                     std::stringstream cluster_ss(cluster_str);
                     uint16_t row, col, sensor;
@@ -961,7 +925,7 @@ class ClustersHandler{
                 }
                 std::stringstream ss(line);
                 std::string cluster_str;
-                int frame = 10;
+
                 while (std::getline(ss, cluster_str, ';')) {
                     std::stringstream cluster_ss(cluster_str);
                     uint16_t row, col, sensor;

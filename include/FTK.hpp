@@ -35,9 +35,9 @@ class FTK{
 
     public:
         std::vector<std::pair<uint64_t, int>> occorrenze;
-        int DimensioneFinestra;
+        int DimensioneFinestra = WINDOW_SIZE_FTK;
         int time = 0;
-        size_t k;
+        size_t k = K;
         float total_iterations = 0;
         size_t current_iterations;
         Patterns_Map<int> Reference;
@@ -47,9 +47,9 @@ class FTK{
         std::vector<ReferenceHandler> referenceHandler;
         std::deque<size_t> deque_iterations;
 
-        inline FTK(int DimensioneFinestra, DataHandler& handler, ThreadPool& pool, double p, size_t k)
-            : handler(handler), pool(pool), task_mancanti(0), DimensioneFinestra(DimensioneFinestra), k(k){
-            random_generator = RandomGeometric(1 - p);
+        inline FTK(DataHandler& handler, ThreadPool& pool)
+            : handler(handler), pool(pool), task_mancanti(0), DimensioneFinestra(DimensioneFinestra){
+            random_generator = RandomGeometric(1 - P);
             topc.resize(POOL_SIZE);
             circular_topc.resize(POOL_SIZE);
             referenceHandler.resize(POOL_SIZE);
@@ -211,25 +211,7 @@ class FTK{
 
 
 
-inline void saveOccorrenzeToCSV(FTK &ftk, const std::string& filename, float iterations) {
-    auto occorrenze = ftk.get_topc();
-    // Scrittura del file in UTF-8
-    std::ofstream file(filename);
-    file.imbue(std::locale::classic());
 
-    file<<"# Total_Iterations; POOL_SIZE; DIM_MULTI_LEVEL\n";
-    file<<"#"<<iterations<<";"<<POOL_SIZE<<";"<<DIM_MULTI_LEVEL<<";\n";
-
-    file<<"Pattern;";
-    file<<"Sum_level;";
-    file<<"Count_level\n";
-
-    for (const auto& pair : occorrenze) {
-        file << pair.first << ";" << pair.second.first << ";" << pair.second.second << "\n";
-    }
-
-    file.close();
-}
 
 #endif //FTK_HPP
 
